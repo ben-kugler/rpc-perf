@@ -13,21 +13,8 @@ pub enum Format {
     Parquet,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum HistogramType {
-    #[default]
-    Standard,
-    Sparse,
-}
-
-impl From<HistogramType> for ParquetHistogramType {
-    fn from(h: HistogramType) -> Self {
-        match h {
-            HistogramType::Standard => ParquetHistogramType::Standard,
-            HistogramType::Sparse => ParquetHistogramType::Sparse,
-        }
-    }
+pub fn histogram_type() -> ParquetHistogramType {
+    ParquetHistogramType::Standard
 }
 
 pub fn interval() -> String {
@@ -43,8 +30,8 @@ pub struct Metrics {
     /// Batch size for parquet files
     batch_size: Option<usize>,
     /// Type of histogram stored: sparse or dense
-    #[serde(default)]
-    histogram: HistogramType,
+    #[serde(default = "histogram_type")]
+    histogram: ParquetHistogramType,
     /// The reporting interval. Specify time along with unit; default to 1s.
     #[serde(default = "interval")]
     interval: String,
@@ -56,7 +43,7 @@ impl Metrics {
             output: general.metrics_output()?,
             format: general.metrics_format(),
             batch_size: None,
-            histogram: HistogramType::default(),
+            histogram: histogram_type(),
             interval: general.metrics_interval().clone(),
         })
     }
@@ -126,7 +113,7 @@ impl Metrics {
         self.batch_size
     }
 
-    pub fn histogram(&self) -> HistogramType {
+    pub fn histogram(&self) -> ParquetHistogramType {
         self.histogram
     }
 

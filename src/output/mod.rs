@@ -286,7 +286,7 @@ pub async fn metrics(config: Config) {
         // metrics task into a runtime with multiple threads that handles only
         // the control plane tasks. In the future, we may wish to move this
         // conversion out onto a thread in the blocking pool instead.
-        let mut opts = ParquetOptions::new().histogram_type(metrics_config.histogram().into());
+        let mut opts = ParquetOptions::new().histogram_type(metrics_config.histogram());
         if let Some(x) = metrics_config.batch_size() {
             opts = opts.max_batch_size(x);
         }

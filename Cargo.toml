@@ -8,6 +8,10 @@ homepage = "https://github.com/iopsystems/rpc-perf"
 repository = "https://github.com/iopsystems/rpc-perf"
 license = "MIT OR Apache-2.0"
 
+[patch.crates-io]
+metriken = { path = "../metriken/metriken/" }
+metriken-exposition = { path = "../metriken/metriken-exposition/" }
+
 [dependencies]
 ahash = "0.8.3"
 async-channel = "1.9.0"
