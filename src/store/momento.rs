@@ -6,6 +6,8 @@ use ::momento::*;
 use paste::paste;
 
 use ::momento::storage::PutRequest;
+use rand::Rng;
+use rand_distr::Alphanumeric;
 use storage::GetResponse;
 use tokio::time::timeout;
 use workload::StoreClientRequest;
@@ -69,10 +71,19 @@ async fn task(
         eprintln!("store configuration was not specified");
         std::process::exit(1);
     });
-    let store_name = store_config.store_name().unwrap_or_else(|| {
-        eprintln!("store name is not specified in the `store` section");
-        std::process::exit(1);
-    });
+    let unique_store: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(7)
+        .map(char::from)
+        .collect();
+    let mut store_name = store_config
+        .store_name()
+        .unwrap_or_else(|| {
+            eprintln!("store name is not specified in the `store` section");
+            std::process::exit(1);
+        })
+        .to_string();
+    store_name.insert_str(0, &format!("{}-", unique_store));
 
     while RUNNING.load(Ordering::Relaxed) {
         let work_item = work_receiver
@@ -87,10 +98,10 @@ async fn task(
                 /*
                  * KEY-VALUE
                  */
-                StoreClientRequest::Get(r) => store_get(&mut client, &config, store_name, r).await,
-                StoreClientRequest::Put(r) => put(&mut client, &config, store_name, r).await,
+                StoreClientRequest::Get(r) => store_get(&mut client, &config, &store_name, r).await,
+                StoreClientRequest::Put(r) => put(&mut client, &config, &store_name, r).await,
                 StoreClientRequest::Delete(r) => {
-                    store_delete(&mut client, &config, store_name, r).await
+                    store_delete(&mut client, &config, &store_name, r).await
                 }
                 _ => {
                     REQUEST_UNSUPPORTED.increment();
