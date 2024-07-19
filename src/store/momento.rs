@@ -56,8 +56,13 @@ pub fn launch_tasks(
         CONNECT_CURR.increment();
 
         // create one task per channel
-        for _ in 0..config.storage().unwrap().concurrency() {
-            runtime.spawn(task(config.clone(), client.clone(), work_receiver.clone()));
+        for i in 0..config.storage().unwrap().concurrency() {
+            runtime.spawn(task(
+                config.clone(),
+                client.clone(),
+                work_receiver.clone(),
+                i.try_into().unwrap(),
+            ));
         }
     }
 }
@@ -66,16 +71,13 @@ async fn task(
     config: Config,
     mut client: PreviewStorageClient,
     work_receiver: Receiver<ClientWorkItemKind<StoreClientRequest>>,
+    store_index: i32,
 ) -> Result<()> {
     let store_config = config.storage().unwrap_or_else(|| {
         eprintln!("store configuration was not specified");
         std::process::exit(1);
     });
-    let unique_store: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(7)
-        .map(char::from)
-        .collect();
+
     let mut store_name = store_config
         .store_name()
         .unwrap_or_else(|| {
@@ -83,7 +85,7 @@ async fn task(
             std::process::exit(1);
         })
         .to_string();
-    store_name.insert_str(0, &format!("{}-", unique_store));
+    store_name.insert_str(0, &format!("{}-", &store_index));
 
     while RUNNING.load(Ordering::Relaxed) {
         let work_item = work_receiver
