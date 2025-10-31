@@ -21,7 +21,14 @@ pub fn launch_tasks(
     debug!("launching momento-protosocket protocol tasks");
 
     let credential_provider = match CredentialProvider::from_env_var("MOMENTO_API_KEY") {
-        Ok(v) => v,
+        Ok(v) => {
+            if let Some(target) = config.target().endpoints().first() {
+                debug!("using secure endpoint override! {}", target);
+                v.secure_endpoint_override(target)
+            } else {
+                v
+            }
+        }
         Err(e) => {
             eprintln!("MOMENTO_API_KEY environment error: {e:?}");
             std::process::exit(1);
